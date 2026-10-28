@@ -3,7 +3,7 @@ CONFIG ?= configs/base.yaml
 SMOKE := configs/smoke.yaml
 STAGES := doctor data teacher_label baseline train_student learning_curve score evaluate cascade quantize serve_bench report
 
-.PHONY: help setup test test-fast lint smoke smoke-clean all notebook $(STAGES)
+.PHONY: help setup test test-fast lint smoke smoke-clean all notebook lock $(STAGES)
 
 help:  ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -35,6 +35,10 @@ all:  ## Full pipeline with CONFIG (default: the T4 run)
 
 notebook:  ## Regenerate notebooks/colab_end_to_end.ipynb
 	$(PY) scripts/make_notebook.py
+
+lock:  ## Re-resolve requirements-gpu.lock for Colab (Linux x86_64, Python 3.12)
+	.venv/bin/uv pip compile requirements-gpu.txt --python-platform x86_64-manylinux_2_35 --python-version 3.12 --quiet -o requirements-gpu.lock
+	sed -i.bak '1s|^|# Full transitive pins for Colab (Linux x86_64, Python 3.12). Regenerate with: make lock\n|' requirements-gpu.lock && rm requirements-gpu.lock.bak
 
 $(STAGES):
 	$(PY) -m llms run --stage $@ --config $(CONFIG)

@@ -155,7 +155,8 @@ answered with the same paired non-inferiority test, quantized vs unquantized stu
 * Every result is written to `results/<run>/<stage>.json` with a timestamp, plus a timestamped copy in
   `results/<run>/history/` and a config snapshot in `results/<run>/configs/`.
 * Fixed seeds; pinned requirements (`requirements.txt` for CPU, `requirements-gpu.txt` adds `vllm` and
-  `bitsandbytes`). On Colab the pins go into an isolated venv, so they never fight Colab's preinstalled packages.
+  `bitsandbytes`, and `requirements-gpu.lock` pins every transitive package for Colab; `make lock` regenerates it).
+  On Colab the lock is installed into an isolated venv, so it never fights Colab's preinstalled packages.
 * The smoke test uses a 135M teacher, which cannot follow a 77-label instruction (free generation was 100% invalid),
   so in smoke mode only the teacher decodes under a label constraint (`teacher.constrained`). The free-generation,
   validation and retry path is covered by unit tests.

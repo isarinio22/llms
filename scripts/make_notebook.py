@@ -43,8 +43,10 @@ Runs every stage of [{REPO_URL}]({REPO_URL}) on Colab. Runtime: **T4 GPU**.
 
 * The repo is cloned **into Google Drive**, so data splits, the teacher cache, checkpoints, models and results
   survive a disconnect. After a disconnect, run the first two cells again, then continue: finished stages are skipped.
-* Packages go into an isolated venv (`/content/venv`) with the exact pins from `requirements-gpu.txt`,
+* Packages go into an isolated venv (`/content/venv`) with the exact pins from `requirements-gpu.lock`,
   so they never clash with Colab's preinstalled packages and no runtime restart is needed.
+* Run Colab under the Google account whose Drive you want to use: Drive can only be mounted for the account
+  that runs the notebook (top-right avatar).
 * Each stage runs in its own process, so GPU memory is fully released between stages.
 """),
         code(f"""
@@ -55,12 +57,15 @@ drive.mount('/content/drive')
 !git pull --ff-only
 """),
         code(f"""
-# Isolated, pinned environment (about 3-5 minutes per fresh Colab session).
-!pip install -q uv
-!test -x {PY} || uv venv /content/venv --python 3.12 -q
-!uv pip install -q --python {PY} -r requirements-gpu.txt
-!uv pip install -q --python {PY} -e . --no-deps
-!{PY} -c "import torch, vllm; print(torch.__version__, vllm.__version__, torch.cuda.get_device_name(0))"
+%%bash
+# Isolated environment with every package pinned (requirements-gpu.lock). A few minutes per fresh session.
+# Stops at the first error; the last line must print the versions, otherwise do not continue.
+set -euo pipefail
+pip install -q uv
+test -x {PY} || uv venv /content/venv --python 3.12 -q
+uv pip install --python {PY} -r requirements-gpu.lock
+uv pip install -q --python {PY} -e . --no-deps
+{PY} -c "import yaml, torch, vllm, llms; print('OK torch', torch.__version__, '| vllm', vllm.__version__, '|', torch.cuda.get_device_name(0))"
 """),
         code("""
 CONFIG = "configs/base.yaml"   # or an ablation, e.g. configs/ablations/student_1p7b.yaml
