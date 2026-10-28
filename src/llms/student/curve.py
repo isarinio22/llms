@@ -18,7 +18,8 @@ def run(cfg: Config, ws: Workspace, key: str) -> dict:
         if n >= len(train):
             log.info("Skipping curve size %d (only %d filtered examples)", n, len(train))
             continue
-        info = train_lora(cfg, ws, train.iloc[order[:n]], f"curve_{n}", cfg.student.curve_evals_per_epoch, merge=False)
+        info = train_lora(cfg, ws, train.iloc[order[:n]], f"curve_{n}", cfg.student.curve_evals_per_epoch,
+                          merge=False, key=key, stage="learning_curve")
         points.append({"n": n, "dev_macro_f1": info["best_dev_macro_f1"], "dev_accuracy": info["best_dev_accuracy"],
                        "train_runtime_s": info["train_runtime_s"]})
     main = ws.load_result("train_student")

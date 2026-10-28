@@ -9,6 +9,7 @@ data:
   max_per_class: 8
   embedding_model: sentence-transformers/all-MiniLM-L6-v2
   embedding_batch_size: 64
+  dedup_threshold: 0.95   # MiniLM spreads similarities wider than Qwen3-Embedding
 
 teacher:
   backend: hf

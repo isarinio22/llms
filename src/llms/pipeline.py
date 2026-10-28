@@ -50,6 +50,15 @@ def stage_key(cfg: Config, name: str) -> str:
     return hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
 
 
+def downstream(name: str) -> set[str]:
+    """Every stage that depends on `name`, directly or transitively."""
+    out: set[str] = set()
+    for s in STAGES:
+        if name in s.deps or out & set(s.deps):
+            out.add(s.name)
+    return out
+
+
 def run_stage(cfg: Config, ws: Workspace, name: str, force: bool = False) -> None:
     stage = BY_NAME[name]
     key = stage_key(cfg, name)
@@ -59,6 +68,13 @@ def run_stage(cfg: Config, ws: Workspace, name: str, force: bool = False) -> Non
     for dep in stage.deps:
         if not ws.is_done(dep, stage_key(cfg, dep)):
             raise RuntimeError(f"Stage {name!r} needs {dep!r} first (missing or outdated).")
+    if force:
+        # Resumable work (training checkpoints) is tagged with run_key.txt; dropping the tags restarts it.
+        for marker in (ws.artifacts / name).rglob("run_key.txt"):
+            marker.unlink()
+        # Same config keys, new outputs: everything downstream must be recomputed.
+        for dep in downstream(name):
+            ws.clear_done(dep)
     module, func = stage.target.split(":")
     fn = getattr(importlib.import_module(module), func)
     set_seed(cfg.run.seed)

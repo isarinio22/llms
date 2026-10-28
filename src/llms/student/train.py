@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import dataclasses
 import math
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -120,7 +121,24 @@ def _make_trainer_cls():
     return LabelOnlyTrainer
 
 
-def train_lora(cfg: Config, ws: Workspace, train: pd.DataFrame, tag: str, evals_per_epoch: int, merge: bool) -> dict:
+def reset_stale_checkpoints(out: Path, key: str) -> bool:
+    """Delete checkpoints written under a different stage key (config or upstream data changed).
+
+    Without this, a rerun after an upstream change would "resume" a model trained on other labels.
+    Returns True if checkpoints were deleted.
+    """
+    marker = out / "run_key.txt"
+    has_ckpt = (out / "checkpoints").exists()
+    stale = marker.read_text().strip() != key if marker.exists() else has_ckpt
+    if stale:
+        shutil.rmtree(out / "checkpoints", ignore_errors=True)
+    out.mkdir(parents=True, exist_ok=True)
+    marker.write_text(key)
+    return stale
+
+
+def train_lora(cfg: Config, ws: Workspace, train: pd.DataFrame, tag: str, evals_per_epoch: int, merge: bool,
+               key: str, stage: str = "train_student") -> dict:
     """Train one LoRA adapter on `train` (teacher labels), early-stopped on dev macro-F1."""
     from transformers import EarlyStoppingCallback, TrainingArguments
 
@@ -128,7 +146,9 @@ def train_lora(cfg: Config, ws: Workspace, train: pd.DataFrame, tag: str, evals_
     device = resolve_device(cfg.run.device)
     labels = load_labels(cfg.labels_file)
     dev = load_splits(ws).query("split == 'dev'")
-    out = ws.stage_dir("train_student") / tag
+    out = ws.stage_dir(stage) / tag
+    if reset_stale_checkpoints(out, key):
+        log.info("[%s] config or data changed since the last checkpoint: training from scratch", tag)
     model, tok = load_student_for_training(cfg, device)
     examples = build_examples(tok, train, labels, cfg)
     truncated = sum(len(e["input_ids"]) >= sc.max_length for e in examples)
@@ -201,7 +221,7 @@ def training_set(ws: Workspace) -> pd.DataFrame:
 
 def run(cfg: Config, ws: Workspace, key: str) -> dict:
     train = training_set(ws)
-    info = train_lora(cfg, ws, train, "main", cfg.student.evals_per_epoch, merge=True)
+    info = train_lora(cfg, ws, train, "main", cfg.student.evals_per_epoch, merge=True, key=key)
     result = {k: v for k, v in info.items() if k != "log_history"}
     result |= {"student": cfg.student.model, "qlora": cfg.student.qlora, "lora": dataclasses.asdict(cfg.student.lora),
                "multitask_rationale": cfg.teacher.rationale,

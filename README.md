@@ -98,7 +98,11 @@ systematic sampler (each class gets its proportional share up to ±1 item, even 
 **unlabeled** split exists only for the sample-size planner: it estimates how often the two models disagree without
 touching the test set. Near-duplicates across splits (normalized-text match or embedding cosine above a threshold)
 are removed from the lower-priority split, so test is never changed. The report shows how many items each
-threshold would remove.
+threshold would remove. The threshold is specific to the embedding model: Qwen3-Embedding scores paraphrases very
+high, and at 0.95 it removed mostly genuine rewordings ("Am I able to top up with Apple Pay?" vs "If I want to top
+up, can I use Apple Pay?"). Paraphrases are what Banking77 is made of, and real tickets repeat in similar words, so
+they stay. Pairs at 0.98 and above are one-word edits ("I can't use my card." vs "I cannot use my card."), which
+would leak test items into training, so those go.
 
 ### 2. Teacher labeling (sequence-level distillation)
 The teacher sees all 77 labels with one-line descriptions (written from the label names only, never from examples).

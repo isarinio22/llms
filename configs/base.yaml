@@ -11,8 +11,8 @@ data:
   max_per_class: null     # subsample per class (smoke mode)
   embedding_model: Qwen/Qwen3-Embedding-0.6B
   embedding_batch_size: 128
-  dedup_threshold: 0.95   # cosine; near-duplicates across splits are removed
-  dedup_report_thresholds: [0.90, 0.95, 0.98]
+  dedup_threshold: 0.98   # cosine, embedding-model specific: for Qwen3-Embedding, 0.95-0.97 are paraphrases, >= 0.98 near-duplicates
+  dedup_report_thresholds: [0.95, 0.97, 0.98, 0.99]
 
 labels_file: configs/labels.yaml
 
