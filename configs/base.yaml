@@ -64,7 +64,7 @@ student:
   curve_evals_per_epoch: 1
 
 scoring:
-  batch_size: 4           # inputs per forward; each expands to 77 label rows (KV cache repeated 77x)
+  batch_size: 8           # inputs per forward; each expands to 77 label rows (KV cache repeated 77x)
   gen_max_new_tokens: 16  # greedy generation used by the cascade's invalid-output rule
 
 calibration:
