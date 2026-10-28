@@ -58,6 +58,7 @@ student:
   max_length: 256         # prompt + target tokens; longer examples are left-truncated (logged)
   gradient_checkpointing: false
   evals_per_epoch: 2
+  eval_with: generate     # early-stopping metric: dev macro-F1 of greedy output (seconds) or "score" (77 labels, minutes)
   early_stopping_patience: 2
   rationale_weight: 1.0   # multi-task ablation only: weight of rationale examples
   curve_sizes: [500, 1000, 2000]   # the main run on all filtered examples is the last point

@@ -61,10 +61,13 @@ Finished stages are skipped (each stage has a cache key derived from its config 
 [Colab CLI](https://github.com/googlecolab/google-colab-cli) (`uv tool install google-colab-cli`, sign in once):
 
 ```bash
-make colab          # T4 session, clone + locked venv, run every stage (finished stages are skipped)
-make colab-fetch    # download results/, figures/, stage markers and the teacher cache into this repo
-make report         # render the README tables locally from the downloaded results
+make colab          # T4 session, clone + locked venv, run every stage; results mirrored here after each stage
+make report         # render the README tables locally from the mirrored results
 ```
+
+After every stage the VM packs the run's small state (results, figures, teacher cache, labels, scores, the
+LoRA adapter, stage markers) and the driver downloads it. If Colab reclaims the VM, `make colab` again uploads
+that bundle to a fresh VM and the run continues from the last finished stage.
 
 **Local (CPU smoke test, no GPU needed).**
 
@@ -129,7 +132,7 @@ not favored at scoring time). The LM head is applied only at answer positions, w
 batch × sequence × 151k-vocabulary logits tensor. **One function** (`llms.prompts.student_prompt`) builds the prompt
 for training, scoring, generation and serving, so the format cannot drift. The student prompt has **no label
 menu**: fine-tuning teaches the labels, which makes its prompts far shorter than the teacher's.
-Early stopping uses dev macro-F1 computed by the real 77-label scorer.
+Early stopping uses dev macro-F1 of the student's greedy output (a few seconds per check); the final evaluation scores all 77 labels.
 
 ### 4. Scoring and calibration
 Instead of trusting free generation, every input is scored against all 77 labels (sum of label-token

@@ -1,8 +1,8 @@
 """Stage 3: LoRA SFT of the student on teacher labels only (never on gold).
 
 Loss is computed on target tokens only. The LM head is applied just at those positions, so the
-(batch x seq x 151k-vocab) logits tensor is never materialized. Early stopping uses dev macro-F1
-from the real 77-label scorer.
+(batch x seq x 151k-vocab) logits tensor is never materialized. Early stopping uses dev macro-F1 of the
+greedy output by default (seconds per check); the final evaluation scores all 77 labels.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import torch
 from torch.nn import functional as F
@@ -24,7 +25,7 @@ from llms.metrics import summary
 from llms.prompts import encode_student
 from llms.teacher.label import load_teacher_labels
 from llms.utils import log, resolve_device, torch_dtype
-from llms.workspace import Workspace, write_json
+from llms.workspace import Workspace, read_json, write_json
 
 
 def build_examples(tok: Any, train: pd.DataFrame, labels: LabelSet, cfg: Config) -> list[dict[str, Any]]:
@@ -96,22 +97,27 @@ def _make_trainer_cls():
     from transformers import Trainer
 
     class LabelOnlyTrainer(Trainer):
-        """Trainer with label-only loss and dev evaluation by 77-label scoring (macro-F1)."""
+        """Trainer with label-only loss and dev macro-F1 evaluation (greedy output or 77-label scoring)."""
 
-        def __init__(self, *args: Any, dev: pd.DataFrame, labels: LabelSet, score_bs: int, **kwargs: Any):
+        def __init__(self, *args: Any, dev: pd.DataFrame, labels: LabelSet, score_bs: int, eval_with: str,
+                     **kwargs: Any):
             super().__init__(*args, **kwargs)
-            self.dev, self.labels, self.score_bs = dev, labels, score_bs
+            self.dev, self.labels, self.score_bs, self.eval_with = dev, labels, score_bs, eval_with
 
         def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
             loss = label_only_loss(model, inputs)
             return (loss, None) if return_outputs else loss
 
         def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
-            from llms.scoring import score_texts
+            from llms.scoring import greedy_labels, score_texts
 
             self.model.eval()
-            scores = score_texts(self.model, self.processing_class, self.dev.text.tolist(), self.labels, self.score_bs)
-            m = summary(self.dev.gold.to_numpy(), scores.argmax(1), len(self.labels))
+            tok, texts = self.processing_class, self.dev.text.tolist()
+            if self.eval_with == "generate":
+                pred = np.asarray(greedy_labels(self.model, tok, texts, self.labels, 16, 64)[1])
+            else:
+                pred = score_texts(self.model, tok, texts, self.labels, self.score_bs).argmax(1)
+            m = summary(self.dev.gold.to_numpy(), pred, len(self.labels))
             metrics = {f"{metric_key_prefix}_macro_f1": m["macro_f1"], f"{metric_key_prefix}_accuracy": m["accuracy"]}
             self.log(metrics)
             self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control, metrics)
@@ -121,20 +127,24 @@ def _make_trainer_cls():
     return LabelOnlyTrainer
 
 
-def reset_stale_checkpoints(out: Path, key: str) -> bool:
-    """Delete checkpoints written under a different stage key (config or upstream data changed).
+TRAIN_OUTPUTS = ("checkpoints", "adapter", "merged", "train_info.json")
 
-    Without this, a rerun after an upstream change would "resume" a model trained on other labels.
-    Returns True if checkpoints were deleted.
+
+def claim_output_dir(out: Path, key: str) -> bool:
+    """True if `out` holds work from an earlier run under the same stage key, which may be reused.
+
+    Otherwise (other key, or untagged, e.g. after --force) earlier checkpoints and outputs are deleted,
+    so a rerun after an upstream change never resumes a model trained on other labels.
     """
     marker = out / "run_key.txt"
-    has_ckpt = (out / "checkpoints").exists()
-    stale = marker.read_text().strip() != key if marker.exists() else has_ckpt
-    if stale:
-        shutil.rmtree(out / "checkpoints", ignore_errors=True)
+    same = marker.exists() and marker.read_text().strip() == key
+    if not same:
+        for name in TRAIN_OUTPUTS:
+            path = out / name
+            shutil.rmtree(path, ignore_errors=True) if path.is_dir() else path.unlink(missing_ok=True)
     out.mkdir(parents=True, exist_ok=True)
     marker.write_text(key)
-    return stale
+    return same
 
 
 def train_lora(cfg: Config, ws: Workspace, train: pd.DataFrame, tag: str, evals_per_epoch: int, merge: bool,
@@ -147,8 +157,12 @@ def train_lora(cfg: Config, ws: Workspace, train: pd.DataFrame, tag: str, evals_
     labels = load_labels(cfg.labels_file)
     dev = load_splits(ws).query("split == 'dev'")
     out = ws.stage_dir(stage) / tag
-    if reset_stale_checkpoints(out, key):
-        log.info("[%s] config or data changed since the last checkpoint: training from scratch", tag)
+    reuse = claim_output_dir(out, key)
+    if reuse and (out / "train_info.json").exists() and (out / "adapter").exists():
+        log.info("[%s] already trained under this stage key: reusing the adapter", tag)
+        if merge and not (out / "merged").exists():
+            merge_adapter(cfg, out / "adapter", out / "merged", device)
+        return read_json(out / "train_info.json")
     model, tok = load_student_for_training(cfg, device)
     examples = build_examples(tok, train, labels, cfg)
     truncated = sum(len(e["input_ids"]) >= sc.max_length for e in examples)
@@ -168,10 +182,10 @@ def train_lora(cfg: Config, ws: Workspace, train: pd.DataFrame, tag: str, evals_
     trainer = _make_trainer_cls()(
         model=model, args=args, train_dataset=examples, eval_dataset=examples[:1], processing_class=tok,
         data_collator=lambda b: collate(b, tok.pad_token_id), dev=dev, labels=labels,
-        score_bs=cfg.scoring.batch_size,
+        score_bs=cfg.scoring.batch_size, eval_with=sc.eval_with,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=sc.early_stopping_patience)],
     )
-    resume = any((out / "checkpoints").glob("checkpoint-*"))
+    resume = reuse and any((out / "checkpoints").glob("checkpoint-*"))
     log.info("[%s] %d examples (%d truncated), %d steps/epoch, eval every %d, trainable %.2fM/%.0fM%s",
              tag, len(examples), truncated, steps_per_epoch, eval_steps, trainable / 1e6, total / 1e6,
              " (resuming)" if resume else "")

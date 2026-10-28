@@ -85,6 +85,7 @@ class StudentCfg:
     max_length: int = 128
     gradient_checkpointing: bool = False
     evals_per_epoch: int = 2
+    eval_with: str = "generate"  # dev macro-F1 during training: greedy output ("generate") or 77-label "score"
     early_stopping_patience: int = 2
     rationale_weight: float = 1.0
     curve_sizes: list[int] = field(default_factory=list)
