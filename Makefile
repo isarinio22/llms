@@ -44,7 +44,8 @@ COLAB ?= $(HOME)/.local/bin/colab
 SESSION ?= llms
 
 colab:  ## Run the pipeline on a Colab T4 from this terminal (Colab CLI; finished stages are skipped)
-	$(COLAB) status -s $(SESSION) >/dev/null 2>&1 || $(COLAB) new -s $(SESSION) --gpu T4
+	$(COLAB) sessions | grep -q '^\[$(SESSION)\]' || $(COLAB) new -s $(SESSION) --gpu T4  # `colab status` exits 0 even for unknown sessions
+	$(COLAB) sessions | grep -q '^\[$(SESSION)\]' || { echo "No GPU session (free-tier limit or capacity): retry later"; exit 1; }
 	$(COLAB) exec -s $(SESSION) --timeout 43200 --env LLMS_CONFIG=$(CONFIG) -f scripts/colab_job.py
 
 colab-fetch:  ## Download results, figures, stage markers and the teacher cache from the Colab VM into this repo
