@@ -1,0 +1,95 @@
+# Full run on a free Colab T4 (16 GB). Every value used by the pipeline lives here.
+run:
+  name: full
+  seed: 13
+  device: auto            # auto -> cuda if available, else cpu
+
+data:
+  dataset_id: PolyAI/banking77
+  # Split BEFORE any teacher labeling. "unlabeled" feeds the sample-size planner only.
+  fractions: {train_pool: 0.65, unlabeled: 0.05, dev: 0.10, test: 0.20}
+  max_per_class: null     # subsample per class (smoke mode)
+  embedding_model: Qwen/Qwen3-Embedding-0.6B
+  embedding_batch_size: 128
+  dedup_threshold: 0.95   # cosine; near-duplicates across splits are removed
+  dedup_report_thresholds: [0.90, 0.95, 0.98]
+
+labels_file: configs/labels.yaml
+
+teacher:
+  backend: vllm           # vllm | hf | api
+  model: Qwen/Qwen3-8B-AWQ
+  quantization: null      # vllm: null = auto-detect from the checkpoint (AWQ -> awq_marlin when supported)
+  dtype: float16          # T4 has no bf16
+  max_model_len: 2048
+  gpu_memory_utilization: 0.85
+  k: 3                    # self-consistency samples per input
+  temperature: 0.7
+  top_p: 0.8
+  max_new_tokens: 24
+  min_agree: 2            # keep a train example when >= min_agree of k samples agree
+  max_retries: 2          # re-sample invalid outputs this many times, then mark invalid
+  constrained: false      # true -> decoding restricted to the 77 labels (vLLM structured outputs / HF trie)
+  chunk_size: 512         # prompts per cache flush (resume granularity)
+  batch_size: 8           # hf backend only
+  hf_load_in_4bit: true   # hf backend only (bitsandbytes NF4)
+  rationale: false        # ablation: ask for a one-sentence rationale too
+  rationale_max_new_tokens: 96
+  api:                    # backend: api -> any OpenAI-compatible /chat/completions endpoint
+    base_url: null
+    model: null
+    api_key_env: OPENAI_API_KEY
+    max_concurrency: 8
+
+student:
+  model: Qwen/Qwen3-0.6B
+  qlora: false            # true -> 4-bit base (bitsandbytes NF4) for a larger student
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  learning_rate: 2.0e-4
+  epochs: 3
+  batch_size: 32
+  grad_accum: 1
+  warmup_ratio: 0.05
+  weight_decay: 0.0
+  max_length: 256         # prompt + target tokens; longer examples are left-truncated (logged)
+  gradient_checkpointing: false
+  evals_per_epoch: 2
+  early_stopping_patience: 2
+  rationale_weight: 1.0   # multi-task ablation only: weight of rationale examples
+  curve_sizes: [500, 1000, 2000]   # the main run on all filtered examples is the last point
+  curve_evals_per_epoch: 1
+
+scoring:
+  batch_size: 4           # inputs per forward; each expands to 77 label rows (KV cache repeated 77x)
+  gen_max_new_tokens: 16  # greedy generation used by the cascade's invalid-output rule
+
+calibration:
+  n_bins: 15
+
+evaluation:
+  alpha: 0.05
+  deltas: [0.01, 0.02, 0.03, 0.05]
+  powers: [0.8, 0.9]
+  primary_delta: 0.02     # margin used to flag per-class intervals as too wide
+  top_classes: 10
+
+cascade:
+  # Assumed costs in USD; change them to match your business.
+  error_cost: 1.00        # E: cost of a misrouted ticket
+  teacher_call_cost: 0.005  # C_big: cost per teacher call
+  student_call_cost: 0.0
+  n_conf_bins: 10
+  length_quantiles: [0.005, 0.995]  # inputs outside these train-pool token-length quantiles go to the teacher
+
+serving:
+  concurrency: [1, 4, 16, 64]
+  hf_batch_sizes: [1, 4, 16, 64]
+  n_requests: 512
+  max_tokens: 16
+  gpu_memory_utilization: 0.85
+  port: 8011
+  quant_modes: [bnb8, bnb4]   # bnb8 | bnb4 (GPU) | int8_dynamic (CPU)

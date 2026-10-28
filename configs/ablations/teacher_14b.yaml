@@ -1,0 +1,4 @@
+# Stronger teacher. About 10 GB of AWQ weights leaves roughly 3 GB of KV cache on a T4.
+inherit: ../base.yaml
+run: {name: teacher_14b}
+teacher: {model: Qwen/Qwen3-14B-AWQ, gpu_memory_utilization: 0.92}

@@ -1,0 +1,10 @@
+# QLoRA: 4-bit NF4 base for a larger student that would not fit comfortably in fp16 with training state.
+inherit: ../base.yaml
+run: {name: qlora_4b}
+student:
+  model: Qwen/Qwen3-4B-Instruct-2507
+  qlora: true
+  gradient_checkpointing: true
+  batch_size: 16
+  grad_accum: 2
+scoring: {batch_size: 2}

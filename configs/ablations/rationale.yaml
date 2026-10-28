@@ -1,0 +1,5 @@
+# Ablation: teacher also writes a one-sentence rationale; the student trains multi-task
+# (label task + rationale task) and outputs only the label at inference.
+inherit: ../base.yaml
+run: {name: rationale}
+teacher: {rationale: true}

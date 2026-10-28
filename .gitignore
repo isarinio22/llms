@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# Large artifacts: datasets, caches, checkpoints, models (Drive on Colab).
+artifacts/
+
+# Smoke-test outputs are regenerated on every run.
+results/smoke/
+figures/smoke/

@@ -1,0 +1,4 @@
+# Larger student. Reuses the teacher cache of the main run (same teacher settings).
+inherit: ../base.yaml
+run: {name: student_1p7b}
+student: {model: Qwen/Qwen3-1.7B, batch_size: 16, grad_accum: 2}

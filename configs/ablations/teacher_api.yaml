@@ -1,0 +1,7 @@
+# Optional paid teacher through any OpenAI-compatible endpoint. Set the key in the environment, e.g.
+#   export OPENAI_API_KEY=...   and fill in base_url / model below.
+inherit: ../base.yaml
+run: {name: teacher_api}
+teacher:
+  backend: api
+  api: {base_url: https://api.openai.com/v1, model: null, api_key_env: OPENAI_API_KEY, max_concurrency: 8}

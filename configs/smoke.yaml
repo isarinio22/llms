@@ -1,0 +1,40 @@
+# CPU smoke test: tiny models, tiny data, a few minutes. Exercises every code path except vLLM.
+inherit: base.yaml
+
+run:
+  name: smoke
+  device: cpu
+
+data:
+  max_per_class: 8
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  embedding_batch_size: 64
+
+teacher:
+  backend: hf
+  model: HuggingFaceTB/SmolLM2-135M-Instruct
+  quantization: null
+  hf_load_in_4bit: false
+  # A 135M model cannot follow a 77-label instruction (100% invalid in free generation), so the
+  # smoke teacher decodes under a label constraint. Free generation + validation is unit-tested.
+  constrained: true
+  batch_size: 16
+  chunk_size: 128
+  max_retries: 1
+
+student:
+  model: HuggingFaceTB/SmolLM2-135M-Instruct
+  lora: {r: 8, alpha: 16}
+  epochs: 1
+  batch_size: 8
+  evals_per_epoch: 2
+  curve_sizes: [50, 100]
+
+scoring:
+  batch_size: 4
+
+serving:
+  concurrency: [1, 4]
+  hf_batch_sizes: [1, 4]
+  n_requests: 16
+  quant_modes: [int8_dynamic]

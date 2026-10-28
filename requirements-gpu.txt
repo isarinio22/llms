@@ -1,0 +1,4 @@
+# Colab T4 (Linux x86_64, CUDA). vllm pins torch==2.13.0 and transformers<5.20.
+-r requirements.txt
+vllm==0.32.0
+bitsandbytes==0.50.2

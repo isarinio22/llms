@@ -1,0 +1,81 @@
+# Banking77 intents in dataset order (index = label id).
+# `name` is the clean label the models produce; `original` is the dataset's raw name.
+# Descriptions were written from the label names alone, without looking at any examples.
+labels:
+  - {name: activate_my_card, description: Wants to activate a card they have received.}
+  - {name: age_limit, description: Asks about the minimum age to open or use an account.}
+  - {name: apple_pay_or_google_pay, description: Asks about adding the card to or paying with Apple Pay or Google Pay.}
+  - {name: atm_support, description: Asks which ATMs can be used or where to withdraw cash with the card.}
+  - {name: automatic_top_up, description: Asks about setting up or how automatic top-ups work.}
+  - {name: balance_not_updated_after_bank_transfer, description: Money sent by bank transfer into the account has not shown up in the balance.}
+  - {name: balance_not_updated_after_cheque_or_cash_deposit, description: A cheque or cash deposit has not shown up in the balance.}
+  - {name: beneficiary_not_allowed, description: Cannot add a beneficiary or payee, or a transfer to them is not allowed.}
+  - {name: cancel_transfer, description: Wants to cancel or undo a transfer they made.}
+  - {name: card_about_to_expire, description: The card is expiring soon and they ask about a replacement.}
+  - {name: card_acceptance, description: Asks where the card is accepted or why a merchant did not accept it.}
+  - {name: card_arrival, description: An ordered card has not arrived yet or they want to track it.}
+  - {name: card_delivery_estimate, description: Asks how long it takes for a card to be delivered.}
+  - {name: card_linking, description: Wants to link a card to the account or app.}
+  - {name: card_not_working, description: The physical card is not working.}
+  - {name: card_payment_fee_charged, description: Was charged an unexpected fee for a card payment.}
+  - {name: card_payment_not_recognised, description: Sees a card payment they do not recognise.}
+  - {name: card_payment_wrong_exchange_rate, description: A card payment in a foreign currency used the wrong exchange rate.}
+  - {name: card_swallowed, description: An ATM kept or swallowed the card.}
+  - {name: cash_withdrawal_charge, description: Was charged a fee for a cash withdrawal.}
+  - {name: cash_withdrawal_not_recognised, description: Sees a cash withdrawal they did not make.}
+  - {name: change_pin, description: Wants to change the card PIN.}
+  - {name: compromised_card, description: Thinks the card details were compromised or used fraudulently.}
+  - {name: contactless_not_working, description: Contactless payments are not working.}
+  - {name: country_support, description: Asks which countries the service or card is available in.}
+  - {name: declined_card_payment, description: A card payment was declined.}
+  - {name: declined_cash_withdrawal, description: A cash withdrawal at an ATM was declined.}
+  - {name: declined_transfer, description: A transfer was declined.}
+  - {name: direct_debit_payment_not_recognised, description: Sees a direct debit they do not recognise.}
+  - {name: disposable_card_limits, description: Asks about limits on disposable virtual cards.}
+  - {name: edit_personal_details, description: Wants to change personal details such as name or address.}
+  - {name: exchange_charge, description: Asks about fees for exchanging currencies.}
+  - {name: exchange_rate, description: Asks which exchange rate is used or how it is set.}
+  - {name: exchange_via_app, description: Wants to exchange money between currencies in the app.}
+  - {name: extra_charge_on_statement, description: Sees an extra or unexpected charge on the statement.}
+  - {name: failed_transfer, description: A transfer failed.}
+  - {name: fiat_currency_support, description: Asks which fiat currencies can be held or exchanged.}
+  - {name: get_disposable_virtual_card, description: Wants to get a disposable virtual card.}
+  - {name: get_physical_card, description: Wants to get a physical card.}
+  - {name: getting_spare_card, description: Wants an additional or spare card.}
+  - {name: getting_virtual_card, description: Wants to get a virtual card.}
+  - {name: lost_or_stolen_card, description: The card was lost or stolen.}
+  - {name: lost_or_stolen_phone, description: The phone with the app was lost or stolen.}
+  - {name: order_physical_card, description: Wants to order a physical card or asks how ordering works.}
+  - {name: passcode_forgotten, description: Forgot the app passcode.}
+  - {name: pending_card_payment, description: A card payment is still pending.}
+  - {name: pending_cash_withdrawal, description: A cash withdrawal is still pending.}
+  - {name: pending_top_up, description: A top-up is still pending.}
+  - {name: pending_transfer, description: A transfer is still pending.}
+  - {name: pin_blocked, description: The PIN is blocked.}
+  - {name: receiving_money, description: Asks how to receive money or about an incoming payment.}
+  - {name: refund_not_showing_up, original: Refund_not_showing_up, description: A refund from a merchant has not shown up in the account.}
+  - {name: request_refund, description: Wants to request a refund for a purchase.}
+  - {name: reverted_card_payment, original: "reverted_card_payment?", description: A card payment was reverted or returned.}
+  - {name: supported_cards_and_currencies, description: Asks which cards or currencies are supported.}
+  - {name: terminate_account, description: Wants to close or delete the account.}
+  - {name: top_up_by_bank_transfer_charge, description: Asks about fees for topping up by bank transfer.}
+  - {name: top_up_by_card_charge, description: Was charged a fee for topping up by card.}
+  - {name: top_up_by_cash_or_cheque, description: Wants to top up with cash or a cheque.}
+  - {name: top_up_failed, description: A top-up failed.}
+  - {name: top_up_limits, description: Asks about top-up limits.}
+  - {name: top_up_reverted, description: A top-up was reverted or cancelled.}
+  - {name: topping_up_by_card, description: Asks how to top up with a card or has a problem doing so.}
+  - {name: transaction_charged_twice, description: The same transaction was charged twice.}
+  - {name: transfer_fee_charged, description: Was charged a fee for a transfer.}
+  - {name: transfer_into_account, description: Asks how to transfer money into their account.}
+  - {name: transfer_not_received_by_recipient, description: The recipient has not received a transfer.}
+  - {name: transfer_timing, description: Asks how long a transfer takes to arrive.}
+  - {name: unable_to_verify_identity, description: Identity verification failed or does not work.}
+  - {name: verify_my_identity, description: Asks how to verify their identity.}
+  - {name: verify_source_of_funds, description: Asks about verifying the source of their funds.}
+  - {name: verify_top_up, description: Asks about verifying a top-up.}
+  - {name: virtual_card_not_working, description: The virtual card is not working.}
+  - {name: visa_or_mastercard, description: Asks whether the card is Visa or Mastercard.}
+  - {name: why_verify_identity, description: Asks why identity verification is needed.}
+  - {name: wrong_amount_of_cash_received, description: An ATM gave a different amount of cash than requested.}
+  - {name: wrong_exchange_rate_for_cash_withdrawal, description: A cash withdrawal abroad used the wrong exchange rate.}

@@ -1,0 +1,5 @@
+# EXPERIMENTAL: newer Qwen3.5-9B teacher (community AWQ). Its Gated DeltaNet layers rely on Triton kernels
+# with open Turing (sm_75) issues in vLLM, so run the doctor stage with this config first.
+inherit: ../base.yaml
+run: {name: qwen35_teacher}
+teacher: {model: cyankiwi/Qwen3.5-9B-AWQ-4bit}
