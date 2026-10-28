@@ -24,7 +24,7 @@ class Stage:
 
 
 STAGES: tuple[Stage, ...] = (
-    Stage("doctor", "llms.doctor:run", cached=False),
+    Stage("doctor", "llms.doctor:run", ("teacher.model", "teacher.quantization", "student.model")),
     Stage("data", "llms.data:run", ("run.seed", "data")),
     Stage("teacher_label", "llms.teacher.label:run", ("teacher", "labels_file"), ("data",)),
     Stage("baseline", "llms.baseline:run", ("run.seed",), ("teacher_label",)),

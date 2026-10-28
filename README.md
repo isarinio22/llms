@@ -57,6 +57,15 @@ test evaluation, and (c) *measuring* teacher label noise on the train-pool. The 
 into Google Drive, so every stage checkpoints there; after a disconnect, rerun the first two cells and continue.
 Finished stages are skipped (each stage has a cache key derived from its config and its upstream stages).
 
+**Colab from the terminal (no browser tab to keep open).** With Google's
+[Colab CLI](https://github.com/googlecolab/google-colab-cli) (`uv tool install google-colab-cli`, sign in once):
+
+```bash
+make colab          # T4 session, clone + locked venv, run every stage (finished stages are skipped)
+make colab-fetch    # download results/, figures/, stage markers and the teacher cache into this repo
+make report         # render the README tables locally from the downloaded results
+```
+
 **Local (CPU smoke test, no GPU needed).**
 
 ```bash

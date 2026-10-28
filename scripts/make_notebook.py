@@ -42,7 +42,10 @@ def build() -> dict:
 Runs every stage of [{REPO_URL}]({REPO_URL}) on Colab. Runtime: **T4 GPU**.
 
 * The repo is cloned **into Google Drive**, so data splits, the teacher cache, checkpoints, models and results
-  survive a disconnect. After a disconnect, run the first two cells again, then continue: finished stages are skipped.
+  survive a disconnect. **After a disconnect: Runtime → Run all.** Finished stages are skipped, teacher labeling
+  continues from its last saved chunk and training from its last checkpoint; the `status` cell shows where you are.
+* Free Colab disconnects sessions that look idle and caps daily GPU time. Keep this tab open and the computer awake
+  (on a Mac, run `caffeinate -d` in a terminal). If no GPU is available, try again later: nothing is lost.
 * Packages go into an isolated venv (`/content/venv`) with the exact pins from `requirements-gpu.lock`,
   so they never clash with Colab's preinstalled packages and no runtime restart is needed.
 * Run Colab under the Google account whose Drive you want to use: Drive can only be mounted for the account
@@ -77,6 +80,8 @@ PY = "{PY}"
 CONFIG = "configs/base.yaml"   # or an ablation, e.g. configs/ablations/student_1p7b.yaml
 EXTRA = ""                       # e.g. "--set teacher.backend=hf" if the vLLM probe fails
 """),
+        md("## Status\n\nWhich stages are already done (on Drive) and how far teacher labeling got."),
+        code(f"!{PY} -m llms status --config {{CONFIG}}"),
     ]
     for name, note in STAGES:
         cells += [md(f"## `{name}`\n\n{note}"), code(f'run_stage("{name}", CONFIG, PY, EXTRA)')]
