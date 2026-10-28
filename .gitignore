@@ -12,3 +12,6 @@ artifacts/
 # Smoke-test outputs are regenerated on every run.
 results/smoke/
 figures/smoke/
+
+# Remote run logs (Colab CLI)
+logs/

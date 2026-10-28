@@ -34,5 +34,6 @@ sys.path.insert(0, f"{ROOT}/src")
 from llms.colab import run_stage  # noqa: E402
 
 config = os.environ.get("LLMS_CONFIG", "configs/base.yaml")
-run_stage(os.environ.get("LLMS_STAGE", "all"), config, PY, os.environ.get("LLMS_EXTRA", ""))
+os.makedirs("logs", exist_ok=True)
+run_stage(os.environ.get("LLMS_STAGE", "all"), config, PY, os.environ.get("LLMS_EXTRA", ""), log_file="logs/run.log")
 sh(f"{PY} -m llms status --config {config}")
