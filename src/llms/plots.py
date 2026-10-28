@@ -7,7 +7,6 @@ from pathlib import Path
 
 # Colab exports MPLBACKEND=module://matplotlib_inline...; that value is invalid outside the notebook kernel.
 os.environ["MPLBACKEND"] = "Agg"
-import matplotlib  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 
 INK, MUTED, GRID = "#1f2933", "#7b8794", "#e4e7eb"
