@@ -14,7 +14,7 @@ import sys
 import time
 
 from llms.config import Config
-from llms.utils import log
+from llms.utils import log, resolve_device, set_seed, use_spawn_for_vllm
 from llms.workspace import Workspace
 
 PACKAGES = ("torch", "transformers", "peft", "accelerate", "sentence-transformers", "vllm", "bitsandbytes")
@@ -56,7 +56,14 @@ def environment() -> dict:
 
 
 def probe_vllm(model: str, quantization: str | None, max_model_len: int, gpu_mem: float) -> dict:
-    """Load `model` in vLLM and generate. Runs inside a subprocess (see `run`)."""
+    """Load `model` in vLLM and generate. Runs inside a subprocess (see `run`).
+
+    Mirrors a pipeline stage: the process seeds torch and queries CUDA before vLLM starts, so a
+    fork-related failure shows up here and not halfway through a run.
+    """
+    set_seed(0)
+    resolve_device("auto")
+    use_spawn_for_vllm()
     start = time.perf_counter()
     from vllm import LLM, SamplingParams
 

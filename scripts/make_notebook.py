@@ -67,13 +67,19 @@ uv pip install --python {PY} -r requirements-gpu.lock
 uv pip install -q --python {PY} -e . --no-deps
 {PY} -c "import yaml, torch, vllm, llms; print('OK torch', torch.__version__, '| vllm', vllm.__version__, '|', torch.cuda.get_device_name(0))"
 """),
-        code("""
+        code(f"""
+%cd {ROOT}
+import sys
+sys.path.insert(0, "src")
+from llms.colab import run_stage   # streams a stage's output and raises if it fails, so "Run all" stops there
+
+PY = "{PY}"
 CONFIG = "configs/base.yaml"   # or an ablation, e.g. configs/ablations/student_1p7b.yaml
 EXTRA = ""                       # e.g. "--set teacher.backend=hf" if the vLLM probe fails
 """),
     ]
     for name, note in STAGES:
-        cells += [md(f"## `{name}`\n\n{note}"), code(f"!{PY} -m llms run --stage {name} --config $CONFIG $EXTRA")]
+        cells += [md(f"## `{name}`\n\n{note}"), code(f'run_stage("{name}", CONFIG, PY, EXTRA)')]
     cells += [
         md("## Figures"),
         code("""

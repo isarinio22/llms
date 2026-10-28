@@ -10,7 +10,7 @@ from typing import Protocol
 from llms.config import TeacherCfg
 from llms.labels import LabelSet
 from llms.prompts import teacher_messages, teacher_prefix, teacher_prompt
-from llms.utils import log, resolve_device
+from llms.utils import log, resolve_device, use_spawn_for_vllm
 
 
 class TeacherBackend(Protocol):
@@ -25,6 +25,7 @@ class VLLMBackend:
     """Offline vLLM engine; the shared label-list prefix is reused via automatic prefix caching."""
 
     def __init__(self, cfg: TeacherCfg, labels: LabelSet, seed: int):
+        use_spawn_for_vllm()
         from vllm import LLM
 
         self.cfg, self.labels = cfg, labels

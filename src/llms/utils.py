@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import random
 import time
 from collections.abc import Iterator
@@ -20,16 +21,21 @@ def setup_logging(level: int = logging.INFO) -> None:
 
 
 def set_seed(seed: int) -> None:
+    """Seed python, numpy and torch. torch.manual_seed also seeds CUDA lazily; do not query CUDA here:
+    torch.cuda.is_available() poisons fork, which breaks vLLM's forked engine process."""
     random.seed(seed)
     np.random.seed(seed)
     try:
         import torch
 
         torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(seed)
     except ImportError:
         pass
+
+
+def use_spawn_for_vllm() -> None:
+    """Make vLLM start its engine process with spawn (fork fails once CUDA was touched in this process)."""
+    os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 
 def resolve_device(device: str) -> str:
