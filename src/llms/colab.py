@@ -16,7 +16,8 @@ def run_stage(stage: str, config: str, python: str, extra: str = "", log_file: s
     """
     cmd = [python, "-m", "llms", "run", "--stage", stage, "--config", config, *shlex.split(extra)]
     print("$", " ".join(cmd), flush=True)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    env = {**os.environ, "MPLBACKEND": "Agg"}  # the kernel's inline backend does not exist in the venv
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
     decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
     log = open(log_file, "a") if log_file else None  # noqa: SIM115
     assert proc.stdout is not None

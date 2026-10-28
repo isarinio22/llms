@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
+# Colab exports MPLBACKEND=module://matplotlib_inline...; that value is invalid outside the notebook kernel.
+os.environ["MPLBACKEND"] = "Agg"
+import matplotlib  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 
 INK, MUTED, GRID = "#1f2933", "#7b8794", "#e4e7eb"
